@@ -75,7 +75,7 @@ public class FriendManager {
         return getFriends(player1).contains(player2);
     }
 
-    private static void syncFriends(ServerPlayer player) {
+    public static void syncFriends(ServerPlayer player) {
         Set<UUID> friends = getFriends(player.getUUID());
         SfriendsNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new PacketFriendListSync(friends));
     }

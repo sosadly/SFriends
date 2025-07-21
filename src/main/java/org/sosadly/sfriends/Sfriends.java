@@ -1,42 +1,43 @@
 package org.sosadly.sfriends;
 
-import org.sosadly.sfriends.client.KeyBindings;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import org.sosadly.sfriends.commands.ModCommands;
 import org.sosadly.sfriends.common.FriendManager;
 import org.sosadly.sfriends.network.SfriendsNetwork;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
 @Mod(Sfriends.MOD_ID)
 public class Sfriends {
     public static final String MOD_ID = "sfriends";
 
     public Sfriends() {
-        SfriendsNetwork.register();
-        @SuppressWarnings("removal")
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        modEventBus.register(this);
+        modEventBus.addListener(this::commonSetup);
+        MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(ModCommands.class);
     }
 
-    @EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-    public static class ClientEvents {
-        @SubscribeEvent
-        public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-            KeyBindings.register(event);
-        }
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        SfriendsNetwork.register();
     }
 
-   @EventBusSubscriber(modid = Sfriends.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
-    public static class ServerEvents {
-        @SubscribeEvent
-        public static void onServerStarted(ServerStartedEvent event) {
-            FriendManager.loadFromDisk();
+    @SubscribeEvent
+    public void onServerStarted(ServerStartedEvent event) {
+        FriendManager.loadFromDisk();
+    }
+    
+    @SubscribeEvent
+    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            FriendManager.syncFriends(player);
         }
     }
 }
